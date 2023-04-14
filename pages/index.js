@@ -1,124 +1,126 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
+import React, { useState } from 'react';
+import axios from 'axios';
+import download from "downloadjs";
 
-const inter = Inter({ subsets: ['latin'] })
+function YoutubeDownloader() {
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoInfo, setVideoInfo] = useState(null);
 
-export default function Home() {
+  const [iframeKey, setIframeKey] = useState(0);
+  const ytd = 'http://yt-download.org/api/button/mp4?url=';
+  
+  const API_KEY ='AIzaSyD0dq0LLe3snHDihx-QRISvp5QSPIoBOtw';
+
+  const getVideoIdFromUrl = (url) => {
+    // parse video ID from URL
+    const regex = /(?:\/|v=)([\w-]{11})(?:\?|&|$)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const videoId = getVideoIdFromUrl(videoUrl);
+  
+    const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,contentDetails&key=${API_KEY}`);
+    setVideoInfo(response.data.items[0]);
+
+    setVideoUrl(ytd+videoUrl);
+    setIframeKey((prevKey) => prevKey + 1);
+  
+   
+ 
+  }
+
+  const Dounws = (event) => {
+  //  downloadVideo(urls);
+  event.preventDefault();
+  down2();
+  }
+
+  const down2 =  async(url) =>{
+    try {
+      console.log(url)
+      const response = await axios.get(
+        `https://www.yt-download.org/api/single/mp4?url=${videoUrl}`
+      );
+      const downloadUrl = response.data.split('"')[1];
+      console.log(response.data);
+      download(downloadUrl);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+ 
+
+  const downloadVideo = async (urls) => {
+ 
+      const videoId = getVideoIdFromUrl(urls);
+
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${API_KEY}`);
+      const videoDuration = response.data.items[0].contentDetails.duration;
+      const durationRegex = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/;
+      const matches = durationRegex.exec(videoDuration);
+      const hours = parseInt(matches[1]) || 0;
+      const minutes = parseInt(matches[2]) || 0;
+      const seconds = parseInt(matches[3]) || 0;
+      const totalSeconds = hours * 60 * 60 + minutes * 60 + seconds;
+  
+      
+  const blob = await axios.get(`https://www.yt-download.org/api/button/mp4?url=${videoUrl}`).then((response) =>
+  
+  new Blob([response.data]));
+    // const blob = await fetch(`https://www.yt-download.org/api/single/mp4?url=` + {videoUrl}).then((response) => response.blob());
+     
+     const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.download = `${videoInfo.snippet.title}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, (totalSeconds + 5) * 1000); // set timeout to allow enough time for download to complete
+    
+   
+
+  
+  
+  };
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    
+    <div className='grid grid-cols-1 place-items-center w-full bg-gray-500 h-full'>
+          
+      <a className='text-red-500 font-500'>Download Youtube Video</a>
+     
+      <form>
+        <input className='border-solid border-sky-500 text-gray-900 border-2 rounded-md w-72 text-sm h-10' type="text"  onChange={(event) => setVideoUrl(event.target.value)} />
+        <div className='grid grid-cols-1 place-items-center'>
+        <button
+        onClick={handleSubmit}
+        className='mt-2 bg-red-500 rounded-md hover:bg-red-600 text-white w-24 h-10' type="submit">Download</button>
         </div>
-      </div>
+        
+      </form>
+      {videoInfo && (
+         <div className='grid grid-cols-1 place-items-center w-full bg-gray-500 h-full'>
+          <h2>{videoInfo.snippet.title}</h2>
+          <img className='rounded-lg drop-shadow-xl' src={videoInfo.snippet.thumbnails.medium.url} />
+          <p>{videoInfo.contentDetails.duration}</p>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+       </div>
+      )}
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+<iframe className='bg-gray-500 rounded-md' key={iframeKey} id="buttonApi" src={videoUrl}
+width="100%" height="400" color='#f5f5f5'  allowtransparency="true" scrolling="no" ></iframe>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    </div>
+  );
 }
+
+export default YoutubeDownloader;
