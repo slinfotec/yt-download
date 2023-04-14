@@ -7,7 +7,7 @@ function YoutubeDownloader() {
   const [videoInfo, setVideoInfo] = useState(null);
 
   const [iframeKey, setIframeKey] = useState(0);
-  const ytd = 'http://yt-download.org/api/button/mp4?url=';
+  const ytd = 'https://yt-download.org/api/button/mp4?url=';
   
   const API_KEY ='AIzaSyD0dq0LLe3snHDihx-QRISvp5QSPIoBOtw';
 
